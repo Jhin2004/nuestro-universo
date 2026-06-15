@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Para mi niña... ♥</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@300;400;600;700&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* Bloqueo estricto del cuerpo de la página para que no se deforme */
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden; 
+            position: fixed;
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
+            color: #4a4a4a;
+            transition: background 1.5s ease;
+        }
+
+        /* --- BOTÓN DE MÚSICA MINIMALISTA (MICRÓFONO) --- */
+        .music-btn {
+            position: fixed; top: 20px; right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            width: 45px; height: 45px;
+            border-radius: 50%; font-size: 1.5rem;
+            cursor: pointer; border: 1px solid rgba(255, 65, 108, 0.3);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 1000; display: flex; justify-content: center; align-items: center;
+            transition: all 0.3s ease;
+        }
+        .music-btn.muted { opacity: 0.7; background: rgba(230, 230, 230, 0.9); }
+        .music-btn:active { transform: scale(0.9); }
+
+        /* --- SECCIÓN 1: LA PROPUESTA --- */
+        #proposal-section {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 50; transition: opacity 1s ease;
+        }
+
+        .container {
+            width: 90%; max-width: 440px;
+            background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(15px);
+            border-radius: 30px; padding: 35px 25px;
+            box-shadow: 0 25px 50px rgba(214, 51, 132, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            text-align: center; position: relative;
+        }
+
+        h1 { font-family: 'Caveat', cursive; font-size: 3.5rem; color: #d81b60; margin-bottom: 5px; line-height: 1.1; }
+        .subtitle { font-size: 1.8rem; color: #880e4f; margin-bottom: 25px; font-weight: 600; }
+
+        .chocolate-box-container { position: relative; width: 200px; height: 200px; margin: 0 auto 25px auto; perspective: 1000px; }
+        .box-inside {
+            position: absolute; width: 100%; height: 100%; background: #3e2723; border-radius: 12px;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.2);
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px; z-index: 1;
+        }
+        .choc-item {
+            background: linear-gradient(135deg, #d32f2f, #c62828); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 2rem; cursor: pointer;
+            box-shadow: 2px 5px 10px rgba(0,0,0,0.5); transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .choc-item.truffle { background: linear-gradient(135deg, #fff3e0, #ffe0b2); font-size: 2.2rem; }
+        .choc-item:hover { transform: scale(1.1); box-shadow: 2px 8px 15px rgba(0,0,0,0.6); }
+        .box-lid {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #c2185b, #ad1457); border-radius: 12px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;
+            color: white; font-family: 'Caveat', cursive; font-size: 2.2rem;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease;
+            transform-origin: top; z-index: 10; border: 2px solid #f48fb1; box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+        .box-lid small { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; animation: pulseText 2s infinite; }
+        @keyframes pulseText { 0%, 100% { transform: scale(1); opacity: 0.8;} 50% { transform: scale(1.05); opacity: 1;} }
+        .chocolate-box-container.open .box-lid { transform: translateY(-120%) rotateX(30deg); opacity: 0; pointer-events: none; }
+
+        .letter { font-size: 1.05rem; line-height: 1.6; margin-bottom: 25px; color: #4f4f4f; text-align: justify; }
+        .question { font-size: 1.45rem; font-weight: 700; color: #b71c1c; margin-bottom: 25px; background: linear-gradient(135deg, #fff5f5, #ffe3e3); padding: 16px; border-radius: 20px; border: 1px dashed #ff4b2b; }
+        .btn-container { display: flex; justify-content: space-around; align-items: center; height: 60px; }
+        .btn { padding: 14px 40px; font-size: 1.15rem; font-weight: 700; border: none; border-radius: 50px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 20px rgba(0,0,0,0.08); width: 45%; }
+        #btnYes { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; }
+        #btnNo { background: #eee; color: #757575; }
+
+        /* Modales Globales */
+        .modal-glass { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); z-index: 150; display: none; justify-content: center; align-items: center; }
+        .glow-card { background: rgba(136, 14, 79, 0.6); backdrop-filter: blur(20px); border: 2px solid #ff4081; box-shadow: 0 0 30px rgba(255, 64, 129, 0.6), inset 0 0 20px rgba(255, 64, 129, 0.3); width: 85%; max-width: 340px; padding: 40px 25px; border-radius: 25px; text-align: center; color: white; transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .glow-card h3 { font-family: 'Caveat', cursive; font-size: 2.8rem; margin-bottom: 15px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .glow-card p { font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px; }
+        .close-btn { background: white; color: #c2185b; border: none; padding: 12px 30px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 1.05rem; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+        /* Pantalla de Éxito */
+        .success-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #fff0f3 0%, #ffccd5 100%); z-index: 200; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; transition: opacity 1s ease; }
+        .success-overlay h2 { font-family: 'Caveat', cursive; font-size: 4rem; color: #d81b60; margin-bottom: 15px; line-height: 1; }
+        .success-overlay p { font-size: 1.2rem; max-width: 380px; line-height: 1.6; color: #555; }
+        .official-date { margin-top: 30px; font-size: 1rem; color: #c2185b; font-weight: 600; border-top: 1px solid rgba(194, 24, 91, 0.3); padding-top: 15px; letter-spacing: 1px; }
+        .universe-btn { margin-top: 25px; background: linear-gradient(135deg, #3a0088, #ff007f); color: white; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 1.1rem; cursor: pointer; box-shadow: 0 10px 25px rgba(58, 0, 136, 0.4); animation: pulseBtn 2s infinite; }
+        @keyframes pulseBtn { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 127, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 0, 127, 0); } }
+
+        .pop-heart { position: fixed; pointer-events: none; font-size: 1.8rem; animation: popOut 0.8s ease-out forwards; z-index: 300; }
+        @keyframes popOut { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.5) rotate(var(--rot)); opacity: 0; } }
+
+        /* --- SECCIÓN 2: EL UNIVERSO 3D --- */
+        #universe-section { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; opacity: 0; pointer-events: none; transition: opacity 1.5s ease; }
+        #universe-section.active { pointer-events: auto; }
+
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; cursor: grab; }
+        #canvas-container:active { cursor: grabbing; }
+        
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        
+        .center-title { position: absolute; top: 8%; left: 50%; transform: translateX(-50%); font-family: 'Caveat', cursive; font-size: 3.5rem; color: white; text-shadow: 0 0 20px #ff4081, 0 0 40px #3a0088; z-index: 5; text-align: center; width: 100%; pointer-events: none; }
+        .instructions { position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.8); font-size: 1rem; pointer-events: none; text-align: center; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 20px 0; }
+
+        .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(255, 64, 129, 0.2); border: 1px solid #ff4081; color: white; padding: 10px 15px; border-radius: 50px; font-weight: 600; cursor: pointer; pointer-events: auto; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 5px; transition: 0.3s; z-index: 20;}
+        
+        /* Planetas más grandes y vistosos */
+        .poi { position: absolute; top: 0; left: 0; pointer-events: auto; will-change: transform; }
+        .poi-content { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; text-align: center; }
+        .poi-content:hover { transform: scale(1.2); }
+        
+        .poi-icon { 
+            font-size: 2.8rem; background: rgba(255, 255, 255, 0.05); border: 2px solid #ff4081; 
+            border-radius: 50%; width: 75px; height: 75px; display: flex; justify-content: center; align-items: center; 
+            margin: 0 auto; box-shadow: 0 0 20px rgba(255, 64, 129, 0.6); backdrop-filter: blur(5px); animation: pulseGlow 2s infinite; 
+        }
+        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 15px rgba(255, 64, 129, 0.6); } 50% { box-shadow: 0 0 30px rgba(255, 64, 129, 1); } }
+        
+        .poi-text { font-family: 'Caveat', cursive; font-size: 1.4rem; color: #ffb1c8; margin-top: 8px; text-shadow: 0 0 5px black, 0 0 15px #ff4081; white-space: nowrap; font-weight: bold;}
+
+        /* Modal del Universo */
+        .uni-card { background: rgba(10, 0, 20, 0.8); border: 2px solid #a340ff; box-shadow: 0 0 30px rgba(163, 64, 255, 0.6), inset 0 0 20px rgba(163, 64, 255, 0.3); pointer-events: auto;}
+        .uni-card h3 { color: #e0b0ff; text-shadow: 0 0 10px rgba(224, 176, 255, 0.8); }
+        .uni-card p { color: #f0e6ff; font-size: 1.15rem;}
+        .uni-btn { background: #a340ff; color: white; box-shadow: 0 0 15px #a340ff; }
+    </style>
+</head>
+<body>
+
+    <audio id="custom-audio" loop src=""></audio>
+
+    <button class="music-btn muted" id="btnAudioToggle" onclick="toggleMusic()">🔇</button>
+
+    <div id="proposal-section">
+        <div class="container">
+            <h1>Es para ti mi niña...</h1>
+            <div class="subtitle">🥺♥</div>
+            
+            <div class="chocolate-box-container" id="chocBox">
+                <div class="box-inside">
+                    <div class="choc-item" onclick="openChoc(1, event)">❤️</div>
+                    <div class="choc-item truffle" onclick="openChoc(2, event)">🍥</div>
+                    <div class="choc-item truffle" onclick="openChoc(3, event)">🍫</div>
+                    <div class="choc-item" onclick="openChoc(4, event)">💖</div>
+                </div>
+                <div class="box-lid" onclick="openBox()">
+                    Ábreme
+                    <small>Click aquí</small>
+                </div>
+            </div>
+
+            <div class="letter">
+                <p>Cada momento contigo es tan dulce como el mejor chocolate. Compartir mi tiempo y mis sonrisas contigo se ha vuelto mi parte favorita del día.</p>
+            </div>
+
+            <div class="question">
+                ¿Me das el honor de ser tu novio?
+            </div>
+
+            <div class="btn-container">
+                <button class="btn" id="btnYes" onclick="celebrate(event)">¡SÍ! ♥</button>
+                <button class="btn" id="btnNo" onclick="handleRomanticNo(event)">No</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-glass" id="glowModal" onclick="closeModal()">
+        <div class="glow-card" id="glowCard" onclick="event.stopPropagation()">
+            <h3 id="modalTitle">Título</h3>
+            <p id="modalContent">Mensaje</p>
+            <button class="close-btn" id="modalCloseBtn" onclick="closeModal()">Cerrar</button>
+        </div>
+    </div>
+
+    <div class="success-overlay" id="successScreen">
+        <h2 style="font-size: 5rem; margin-bottom: 0;">👩‍❤️‍👨✨</h2>
+        <h2>¡Gracias por decir que sí!</h2>
+        <p>Prometo cuidar siempre de tu corazón. Desde que estás conmigo, tengo claro que <strong>eres todo lo mejor que me ha pasado</strong>. ¡Me haces el más feliz del mundo! ♥</p>
+        
+        <div class="official-date" id="dateText">El inicio de nuestra historia</div>
+
+        <button class="universe-btn" onclick="startUniverse()">Viajar a nuestro universo 🌌</button>
+    </div>
+
+    <div id="universe-section">
+        <div id="canvas-container"></div>
+        <div class="center-title">Este será nuestro universo ✨</div>
+        <div class="instructions">Pellizca para acercar/alejar • Desliza para girar la galaxia</div>
+        
+        <div id="ui-layer">
+            <button class="back-btn" onclick="returnToProposal()">⬅ Volver a la cajita</button>
+
+            <div class="poi" id="poi-0"><div class="poi-content" onclick="openUniModal(0)"><div class="poi-icon">🥺</div><div class="poi-text">Tu Sonrisa</div></div></div>
+            <div class="poi" id="poi-1"><div class="poi-content" onclick="openUniModal(1)"><div class="poi-icon">🏡</div><div class="poi-text">Mi Refugio</div></div></div>
+            <div class="poi" id="poi-2"><div class="poi-content" onclick="openUniModal(2)"><div class="poi-icon">💖</div><div class="poi-text">Mi Corazón</div></div></div>
+            <div class="poi" id="poi-3"><div class="poi-content" onclick="openUniModal(3)"><div class="poi-icon">✨</div><div class="poi-text">Nuestro Futuro</div></div></div>
+            <div class="poi" id="poi-4"><div class="poi-content" onclick="openUniModal(4)"><div class="poi-icon">👀</div><div class="poi-text">Tu Mirada</div></div></div>
+            <div class="poi" id="poi-5"><div class="poi-content" onclick="openUniModal(5)"><div class="poi-icon">🦋</div><div class="poi-text">Tu Magia</div></div></div>
+            <div class="poi" id="poi-6"><div class="poi-content" onclick="openUniModal(6)"><div class="poi-icon">🌹</div><div class="poi-text">Tu Belleza</div></div></div>
+            <div class="poi" id="poi-7"><div class="poi-content" onclick="openUniModal(7)"><div class="poi-icon">🎵</div><div class="poi-text">Tu Voz</div></div></div>
+            <div class="poi" id="poi-8"><div class="poi-content" onclick="openUniModal(8)"><div class="poi-icon">🫂</div><div class="poi-text">Tus Abrazos</div></div></div>
+            <div class="poi" id="poi-9"><div class="poi-content" onclick="openUniModal(9)"><div class="poi-icon">🌟</div><div class="poi-text">Tu Luz</div></div></div>
+        </div>
+    </div>
+
+    <div class="modal-glass" id="uniModal" onclick="closeUniModal()">
+        <div class="glow-card uni-card" id="uniCard" onclick="event.stopPropagation()">
+            <h3 id="uniTitle">Título</h3>
+            <p id="uniContent">Mensaje</p>
+            <button class="close-btn uni-btn" onclick="closeUniModal()">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        const dateObj = new Date();
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        document.getElementById('dateText').innerHTML = `El inicio de nuestra historia<br>${dateObj.toLocaleDateString('es-ES', options)}`;
+
+        let audioCtx = null; let isPlaying = false; let loopTimeout = null;
+        function vibratePhone(pattern) { if ("vibrate" in navigator) navigator.vibrate(pattern); }
+
+        function playTone(freq, time) {
+            if(!audioCtx) return;
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(0.15, time + 0.05); 
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 1.5); 
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(time); osc.stop(time + 1.5);
+        }
+
+        function playTikTokMelody() {
+            if (!audioCtx) return;
+            let time = audioCtx.currentTime;
+            const notes = [ 440.00, 523.25, 659.25, 523.25, 440.00, 523.25, 659.25, 523.25, 349.23, 440.00, 523.25, 440.00, 349.23, 440.00, 523.25, 440.00, 392.00, 493.88, 587.33, 493.88, 392.00, 493.88, 587.33, 493.88 ];
+            notes.forEach((freq, index) => { playTone(freq, time + (index * 0.25)); });
+            if (isPlaying) { loopTimeout = setTimeout(playTikTokMelody, notes.length * 250); }
+        }
+
+        function toggleMusic() {
+            const audioEl = document.getElementById('custom-audio');
+            const hasCustomAudio = audioEl.getAttribute('src') !== "";
+            const btn = document.getElementById('btnAudioToggle');
+
+            if (!isPlaying) {
+                isPlaying = true; 
+                btn.classList.remove('muted');
+                btn.innerHTML = '🎤'; // Microfono brillante cuando suena
+                if (hasCustomAudio) { audioEl.play().catch(e => console.log("Audio error:", e)); } 
+                else { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } playTikTokMelody(); }
+            } else {
+                isPlaying = false; 
+                btn.classList.add('muted');
+                btn.innerHTML = '🔇'; // Silenciado cuando no suena
+                if (hasCustomAudio) { audioEl.pause(); } else { if (loopTimeout) clearTimeout(loopTimeout); }
+            }
+        }
+
+        function openBox() { document.getElementById('chocBox').classList.add('open'); vibratePhone([30, 50, 30]); }
+
+        function popHeartsExplosion(x, y) {
+            for(let i=0; i<15; i++) {
+                let heart = document.createElement('div');
+                heart.innerHTML = ['💖', '✨', '❤️', '💕'][Math.floor(Math.random()*4)];
+                heart.className = 'pop-heart'; heart.style.left = x + 'px'; heart.style.top = y + 'px';
+                heart.style.setProperty('--tx', ((Math.random() - 0.5) * 150) + 'px');
+                heart.style.setProperty('--ty', ((Math.random() - 0.5) * 150) + 'px');
+                heart.style.setProperty('--rot', (Math.random() * 360) + 'deg');
+                document.body.appendChild(heart); setTimeout(() => heart.remove(), 800);
+            }
+        }
+
+        function openChoc(id, event) {
+            popHeartsExplosion(event.clientX, event.clientY); vibratePhone(40);
+            
+            const hasCustomAudio = document.getElementById('custom-audio').getAttribute('src') !== "";
+            if(!hasCustomAudio && audioCtx && isPlaying) { let time = audioCtx.currentTime; playTone(523.25, time); playTone(659.25, time + 0.1); playTone(783.99, time + 0.2); }
+
+            const modal = document.getElementById('glowModal'); const card = document.getElementById('glowCard');
+            const title = document.getElementById('modalTitle'); const content = document.getElementById('modalContent');
+            const closeBtn = document.getElementById('modalCloseBtn');
+            closeBtn.innerText = "Cerrar"; closeBtn.onclick = closeModal;
+            
+            if (id===1){ title.innerText="Eres mi dulzura"; content.innerText="Cada momento contigo es tan dulce como este chocolate. Te quiero con todo mi corazón."; }
+            else if (id===2){ title.innerText="Juntos siempre"; content.innerText="Como el chocolate con leche, somos la combinación perfecta. Contigo todo es mejor."; }
+            else if (id===3){ title.innerText="Mi amor puro"; content.innerText="Como el chocolate blanco, mi amor por ti es puro y sincero. Eres lo mejor de mi vida."; }
+            else if (id===4){ title.innerText="Eres especial"; content.innerText="Tan especial como una trufa, así eres tú para mí. Gracias por existir en mi vida y llenarla de luz."; }
+            
+            modal.style.display = 'flex'; setTimeout(() => { card.style.transform = 'scale(1)'; }, 50);
+        }
+
+        function handleRomanticNo(event) {
+            popHeartsExplosion(event.clientX, event.clientY); vibratePhone([50, 100, 50]);
+            const modal = document.getElementById('glowModal'); const card = document.getElementById('glowCard');
+            document.getElementById('modalTitle').innerText = "No me rindo tan fácil... ✨";
+            document.getElementById('modalContent').innerText = "Porque encontrar a alguien como tú es un milagro. Dame la oportunidad de cuidarte y hacerte la niña más feliz del mundo. ¿Qué dices?";
+            const closeBtn = document.getElementById('modalCloseBtn');
+            closeBtn.innerText = "Está bien, ¡SÍ! ♥"; closeBtn.onclick = function(e) { closeModal(); setTimeout(() => celebrate(e), 300); };
+            modal.style.display = 'flex'; setTimeout(() => { card.style.transform = 'scale(1)'; }, 50);
+        }
+
+        function closeModal() {
+            document.getElementById('glowCard').style.transform = 'scale(0.8)';
+            setTimeout(() => { document.getElementById('glowModal').style.display = 'none'; }, 200);
+        }
+
+        function celebrate(event) {
+            vibratePhone([100, 50, 100, 50, 200]);
+            if(event) popHeartsExplosion(event.clientX || window.innerWidth/2, event.clientY || window.innerHeight/2);
+            document.getElementById('proposal-section').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('proposal-section').style.display = 'none';
+                document.getElementById('successScreen').style.display = 'flex';
+                setTimeout(() => { document.getElementById('successScreen').style.opacity = '1'; }, 50);
+                for(let i=0; i<30; i++) { setTimeout(() => { popHeartsExplosion(Math.random()*window.innerWidth, window.innerHeight+50); }, i*150); }
+            }, 1000);
+        }
+
+        let threeJsInitialized = false;
+
+        function startUniverse() {
+            vibratePhone([50, 50, 50]);
+            document.body.style.background = '#05000a';
+            document.getElementById('successScreen').style.opacity = '0';
+            
+            window.dispatchEvent(new Event('resize'));
+
+            setTimeout(() => {
+                document.getElementById('successScreen').style.display = 'none';
+                document.getElementById('universe-section').classList.add('active');
+                document.getElementById('universe-section').style.opacity = '1';
+                if(!threeJsInitialized) initThreeJS(); 
+            }, 1000);
+        }
+
+        function returnToProposal() {
+            vibratePhone([30, 30]);
+            document.getElementById('universe-section').style.opacity = '0';
+            document.getElementById('universe-section').classList.remove('active');
+            document.body.style.background = 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%)';
+            
+            setTimeout(() => {
+                document.getElementById('proposal-section').style.display = 'flex';
+                document.getElementById('chocBox').classList.remove('open');
+                setTimeout(() => { document.getElementById('proposal-section').style.opacity = '1'; }, 100);
+            }, 1000);
+        }
+
+        // --- MOTOR 3D MEJORADO PARA MÓVILES ---
+        let scene, camera, renderer, galaxy, heartCenter, controls;
+        let pois = [];
+
+        function initThreeJS() {
+            threeJsInitialized = true;
+            scene = new THREE.Scene(); scene.fog = new THREE.FogExp2('#05000a', 0.012); 
+            
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 35, 55); camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; controls.dampingFactor = 0.05;
+            controls.enablePan = false; controls.minDistance = 15; controls.maxDistance = 100; 
+
+            const canvasTex = document.createElement('canvas'); canvasTex.width = 16; canvasTex.height = 16;
+            const ctx = canvasTex.getContext('2d'); const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+            grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, 16, 16); const particleTex = new THREE.CanvasTexture(canvasTex);
+
+            // Galaxia
+            const galaxyGeometry = new THREE.BufferGeometry();
+            const particleCount = 10000; const positions = new Float32Array(particleCount * 3); const colors = new Float32Array(particleCount * 3);
+            const colorInside = new THREE.Color('#ff007f'); const colorOutside = new THREE.Color('#3a0088');
+
+            for(let i = 0; i < particleCount; i++) {
+                const i3 = i * 3; const radius = Math.random() * 45; const spinAngle = radius * 0.5; const branchAngle = (i % 4) * ((Math.PI * 2) / 4);
+                const randomX = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 3;
+                const randomY = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 3;
+                const randomZ = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 3;
+
+                positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+                positions[i3 + 1] = randomY; positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+
+                const mixedColor = colorInside.clone(); mixedColor.lerp(colorOutside, radius / 45);
+                colors[i3] = mixedColor.r; colors[i3+1] = mixedColor.g; colors[i3+2] = mixedColor.b;
+            }
+            galaxyGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            galaxyGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            const galaxyMat = new THREE.PointsMaterial({ size: 0.15, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true, map: particleTex, transparent: true });
+            galaxy = new THREE.Points(galaxyGeometry, galaxyMat); scene.add(galaxy);
+
+            // Corazón Central
+            const heartGeo = new THREE.BufferGeometry(); const heartPoints = 600; const heartPos = new Float32Array(heartPoints * 3);
+            for(let i=0; i<heartPoints; i++) {
+                const t = Math.random() * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(t), 3); const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                heartPos[i*3] = x * 0.2; heartPos[i*3+1] = 2; heartPos[i*3+2] = -y * 0.2; 
+            }
+            heartGeo.setAttribute('position', new THREE.BufferAttribute(heartPos, 3));
+            const heartMat = new THREE.PointsMaterial({ size: 0.4, color: '#ff4081', blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, map: particleTex });
+            heartCenter = new THREE.Points(heartGeo, heartMat); scene.add(heartCenter);
+
+            // Anillos y planetas
+            const orbitalRadii = [13, 16.5, 20, 23.5, 27, 30.5, 34, 37.5, 41, 44.5];
+            orbitalRadii.forEach(r => {
+                const curve = new THREE.EllipseCurve(0, 0, r, r, 0, 2 * Math.PI, false, 0);
+                const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(64));
+                const mat = new THREE.LineBasicMaterial({ color: 0xff4081, transparent: true, opacity: 0.15 });
+                const ellipse = new THREE.Line(geo, mat); ellipse.rotation.x = Math.PI / 2; scene.add(ellipse);
+            });
+
+            const PI2 = Math.PI * 2;
+            pois = [
+                { id: 0, element: document.getElementById('poi-0'), angle: 0 * (PI2 / 10), radius: orbitalRadii[0] },
+                { id: 1, element: document.getElementById('poi-1'), angle: 1 * (PI2 / 10), radius: orbitalRadii[1] },
+                { id: 2, element: document.getElementById('poi-2'), angle: 2 * (PI2 / 10), radius: orbitalRadii[2] },
+                { id: 3, element: document.getElementById('poi-3'), angle: 3 * (PI2 / 10), radius: orbitalRadii[3] },
+                { id: 4, element: document.getElementById('poi-4'), angle: 4 * (PI2 / 10), radius: orbitalRadii[4] },
+                { id: 5, element: document.getElementById('poi-5'), angle: 5 * (PI2 / 10), radius: orbitalRadii[5] },
+                { id: 6, element: document.getElementById('poi-6'), angle: 6 * (PI2 / 10), radius: orbitalRadii[6] },
+                { id: 7, element: document.getElementById('poi-7'), angle: 7 * (PI2 / 10), radius: orbitalRadii[7] },
+                { id: 8, element: document.getElementById('poi-8'), angle: 8 * (PI2 / 10), radius: orbitalRadii[8] },
+                { id: 9, element: document.getElementById('poi-9'), angle: 9 * (PI2 / 10), radius: orbitalRadii[9] }
+            ];
+
+            animateUniverse();
+        }
+
+        const clock = new THREE.Clock();
+        function animateUniverse() {
+            requestAnimationFrame(animateUniverse);
+            const elapsedTime = clock.getElapsedTime();
+            if(controls) controls.update();
+
+            if(galaxy) galaxy.rotation.y = elapsedTime * 0.02; 
+            if(heartCenter) {
+                heartCenter.rotation.y = elapsedTime * 0.2;
+                const scale = 1 + Math.sin(elapsedTime * 3) * 0.05; 
+                heartCenter.scale.set(scale, scale, scale);
+            }
+
+            const orbitSpeed = 0.08; 
+
+            pois.forEach((poi, index) => {
+                const currentAngle = (elapsedTime * orbitSpeed) + poi.angle;
+                const x = Math.cos(currentAngle) * poi.radius; 
+                const z = Math.sin(currentAngle) * poi.radius;
+                const y = Math.sin(elapsedTime * 1.5 + index) * 1.5; 
+                
+                const vector = new THREE.Vector3(x, y, z); 
+                const dist = camera.position.distanceTo(vector);
+                
+                vector.project(camera); 
+                const xPos = (vector.x * .5 + .5) * window.innerWidth; 
+                const yPos = (vector.y * -.5 + .5) * window.innerHeight;
+
+                if(vector.z < 1) { 
+                    const scaleEffect = Math.max(0.65, 1.3 - (dist / 70)); 
+                    const opacityEffect = Math.max(0.4, 1 - (dist / 80));
+                    const zIndex = Math.round((1 - vector.z) * 1000); 
+
+                    poi.element.style.transform = `translate(-50%, -50%) translate(${xPos}px, ${yPos}px) scale(${scaleEffect})`;
+                    poi.element.style.opacity = opacityEffect;
+                    poi.element.style.zIndex = zIndex;
+                } else { 
+                    poi.element.style.opacity = '0'; 
+                    poi.element.style.zIndex = -1;
+                }
+            });
+            if(renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
+
+        function openUniModal(id) {
+            vibratePhone(40);
+            const title = document.getElementById('uniTitle'); const content = document.getElementById('uniContent');
+            if (id===0){ title.innerText="Tu Sonrisa"; content.innerText="Es la luz que atraviesa cualquier oscuridad. Es mi amanecer favorito, mi razón para despertar cada día."; }
+            else if (id===1){ title.innerText="Mi Refugio"; content.innerText="Mi lugar favorito en el universo es entre tus brazos. Ahí el tiempo se detiene y todo tiene sentido."; }
+            else if (id===2){ title.innerText="Mi Corazón"; content.innerText="Desde que llegaste, todo se alineó perfectamente. Esta galaxia es solo un reflejo de lo inmenso que es lo que siento por ti."; }
+            else if (id===3){ title.innerText="Nuestro Futuro"; content.innerText="Cada estrella de esta galaxia representa un momento hermoso que nos falta por vivir juntos."; }
+            else if (id===4){ title.innerText="Tu Mirada"; content.innerText="Me pierdo en ella cada vez que me miras, como si fuera la constelación más hermosa y brillante de todas."; }
+            else if (id===5){ title.innerText="Tu Magia"; content.innerText="Haces que lo ordinario se vuelva extraordinario con solo existir cerca de mí. Gracias por dejarme entrar a tu mundo."; }
+            else if (id===6){ title.innerText="Tu Belleza"; content.innerText="No hay estrella, galaxia ni constelación que se compare con lo preciosa que eres, tanto por dentro como por fuera."; }
+            else if (id===7){ title.innerText="Tu Voz"; content.innerText="Es mi canción favorita en todo el universo. Escucharte me da paz al instante."; }
+            else if (id===8){ title.innerText="Tus Abrazos"; content.innerText="Mi lugar seguro. Donde todos los problemas desaparecen y solo existimos tú y yo."; }
+            else if (id===9){ title.innerText="Tu Luz"; content.innerText="Tienes una energía única. Llegaste a iluminar partes de mí que no sabía que estaban a oscuras."; }
+            
+            document.getElementById('uniModal').style.display = 'flex';
+            setTimeout(() => { document.getElementById('uniCard').style.transform = 'scale(1)'; }, 10);
+        }
+
+        function closeUniModal() {
+            document.getElementById('uniCard').style.transform = 'scale(0.8)';
+            setTimeout(() => { document.getElementById('uniModal').style.display = 'none'; }, 300);
+        }
+
+        window.onload = () => { initThreeJS(); };
+    </script>
+</body>
+</html>
