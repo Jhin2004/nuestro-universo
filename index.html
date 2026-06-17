@@ -74,11 +74,16 @@
         .pop-heart { position: fixed; pointer-events: none; font-size: 1.8rem; animation: popOut 0.8s ease-out forwards; z-index: 300; }
         @keyframes popOut { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.5) rotate(var(--rot)); opacity: 0; } }
 
-        /* --- SECCIÓN 2: EL UNIVERSO 3D --- */
-        #universe-section { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; opacity: 0; pointer-events: none; transition: opacity 1.5s ease; }
+        /* --- SECCIÓN 2: EL UNIVERSO 3D (Polvo estelar CSS) --- */
+        #universe-section { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; opacity: 0; pointer-events: none; transition: opacity 1.5s ease; background-color: #05000a;}
         #universe-section.active { pointer-events: auto; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; cursor: grab; }
         #canvas-container:active { cursor: grabbing; }
+        
+        /* Estrellas de fondo animadas CSS para más vida */
+        .stars-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat; animation: moveStars 60s linear infinite; opacity: 0.3;}
+        @keyframes moveStars { from { background-position: 0 0; } to { background-position: 1000px 500px; } }
+
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
         .center-title { position: absolute; top: 8%; left: 50%; transform: translateX(-50%); font-family: 'Caveat', cursive; font-size: 3.5rem; color: white; text-shadow: 0 0 20px #ff4081, 0 0 40px #3a0088; z-index: 5; text-align: center; width: 100%; pointer-events: none; }
@@ -86,7 +91,6 @@
 
         .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(255, 64, 129, 0.2); border: 1px solid #ff4081; color: white; padding: 10px 15px; border-radius: 50px; font-weight: 600; cursor: pointer; pointer-events: auto; backdrop-filter: blur(5px); display: flex; align-items: center; gap: 5px; transition: 0.3s; z-index: 20;}
         
-        /* Botón del Diario en el Universo */
         .diary-btn { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #ff4081, #c2185b); border: 2px solid white; color: white; padding: 12px 25px; border-radius: 50px; font-weight: bold; font-size: 1.1rem; cursor: pointer; pointer-events: auto; box-shadow: 0 10px 20px rgba(194, 24, 91, 0.5); z-index: 20; display: flex; align-items: center; gap: 8px; animation: pulseGlow 2s infinite;}
 
         .poi { position: absolute; top: 0; left: 0; pointer-events: auto; will-change: transform; }
@@ -101,7 +105,7 @@
         .uni-card p { color: #f0e6ff; font-size: 1.15rem;}
         .uni-btn { background: #a340ff; color: white; box-shadow: 0 0 15px #a340ff; }
 
-        /* --- SECCIÓN 3: EL DIARIO (NUEVA SECCIÓN) --- */
+        /* --- SECCIÓN 3: DIARIO (TARJETAS 3D INTERACTIVAS) --- */
         #diary-section {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #ffe4e1 0%, #ffb6c1 100%);
@@ -113,28 +117,64 @@
         .diary-title { font-family: 'Caveat', cursive; font-size: 4rem; color: #c2185b; text-align: center; margin-bottom: 30px; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
         
         .timeline { position: relative; max-width: 400px; margin: 0 auto; }
-        /* Línea central */
-        .timeline::after { content: ''; position: absolute; width: 4px; background: #ff80ab; top: 0; bottom: 0; left: 50%; margin-left: -2px; border-radius: 5px; }
+        .timeline::after { content: ''; position: absolute; width: 4px; background: rgba(255, 128, 171, 0.5); top: 0; bottom: 0; left: 50%; margin-left: -2px; border-radius: 5px; z-index: 0; }
 
-        .polaroid {
-            position: relative; background: white; padding: 15px 15px 25px 15px; width: 85%; margin: 0 auto 40px auto;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15); border-radius: 4px; z-index: 2;
-            transform: rotate(-2deg); transition: transform 0.3s ease;
+        /* Contenedor principal de la tarjeta para el efecto 3D */
+        .polaroid-container {
+            position: relative; perspective: 1000px;
+            width: 88%; max-width: 320px; margin: 0 auto 50px auto;
+            z-index: 2;
         }
-        .polaroid:nth-child(even) { transform: rotate(3deg); }
-        .polaroid:hover { transform: scale(1.05) rotate(0deg); z-index: 10; }
+
+        /* Envoltorio que rota */
+        .polaroid-inner {
+            position: relative; width: 100%;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d; cursor: pointer;
+        }
+
+        /* Al tocar (o pasar el mouse), se voltea 180 grados y se agranda un poco */
+        .polaroid-container:hover .polaroid-inner, 
+        .polaroid-container:active .polaroid-inner {
+            transform: rotateY(180deg) scale(1.05);
+            z-index: 10;
+        }
+
+        /* Estilos base para el Frente y Reverso */
+        .polaroid-front, .polaroid-back {
+            width: 100%; backface-visibility: hidden;
+            background: white; padding: 15px 15px 25px 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); border-radius: 6px;
+        }
+
+        /* FRENTE DE LA FOTO */
+        .polaroid-front {
+            position: relative; transform: rotate(-3deg);
+        }
+        .polaroid-container:nth-child(even) .polaroid-front { transform: rotate(3deg); }
         
         .polaroid-img-container {
             width: 100%; aspect-ratio: 1/1; background: #f0f0f0; margin-bottom: 15px;
             display: flex; justify-content: center; align-items: center; overflow: hidden;
-            border: 1px solid #eee;
+            border: 1px solid #eee; pointer-events: none;
         }
         .polaroid-img-container img { width: 100%; height: 100%; object-fit: cover; }
         .polaroid-no-img { font-size: 3rem; color: #ff80ab; }
 
-        .polaroid-date { font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-        .polaroid-title { font-family: 'Caveat', cursive; font-size: 2.2rem; color: #d81b60; line-height: 1; margin-bottom: 10px; }
-        .polaroid-desc { font-family: 'Montserrat', sans-serif; font-size: 0.95rem; color: #555; line-height: 1.5; }
+        .polaroid-date { font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;}
+        .polaroid-hint { font-family: 'Caveat', cursive; font-size: 1.2rem; color: #ff4081; margin-top: 5px; animation: pulseText 1.5s infinite;}
+
+        /* REVERSO DEL MENSAJE (Oculto al inicio) */
+        .polaroid-back {
+            position: absolute; top: 0; left: 0; height: 100%;
+            transform: rotateY(180deg) rotate(2deg); /* Se rota para que al voltear quede derecho */
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+            background: linear-gradient(135deg, #fff9fb, #ffe0e9);
+            border: 2px dashed #ff80ab;
+        }
+        .polaroid-title { font-family: 'Caveat', cursive; font-size: 2.2rem; color: #d81b60; line-height: 1.1; margin-bottom: 15px; }
+        .polaroid-desc { font-family: 'Montserrat', sans-serif; font-size: 0.95rem; color: #555; line-height: 1.6; font-style: italic;}
+        .polaroid-decor { font-size: 2rem; margin-top: 15px; }
 
         .diary-back-btn {
             position: fixed; top: 20px; left: 20px; background: white; color: #d81b60;
@@ -197,6 +237,7 @@
 
     <!-- SECCIÓN 2: EL UNIVERSO DE 10 PLANETAS -->
     <div id="universe-section">
+        <div class="stars-bg"></div> <!-- Nuevo Fondo Dinámico -->
         <div id="canvas-container"></div>
         <div class="center-title">Este será nuestro universo ✨</div>
         
@@ -229,7 +270,7 @@
         </div>
     </div>
 
-    <!-- SECCIÓN 3: DIARIO (CALENDARIO DE FOTOS) -->
+    <!-- SECCIÓN 3: DIARIO (TARJETAS 3D) -->
     <div id="diary-section">
         <button class="diary-back-btn" onclick="closeDiary()">⬅ Volver al Universo</button>
         <h2 class="diary-title">Nuestra Historia</h2>
@@ -242,26 +283,22 @@
         // ==========================================
         // 📚 AQUI AGREGAS LAS FECHAS Y FOTOS NUEVAS
         // ==========================================
-        // Solo copia un bloque entero { ... }, ponle una coma al anterior y edita los textos.
-        // Si tienes una foto en GitHub, pon el nombre en "foto" (ejemplo: "mifoto.jpg").
-        // Si dejas "foto" vacío, se mostrará un corazón decorativo.
         const MIS_RECUERDOS = [
             {
                 fecha: "16 de Junio de 2026",
                 titulo: "El comienzo de todo ✨",
                 descripcion: "El día que me hiciste el hombre más feliz aceptando ser mi novia.",
+                foto: "" 
+            },
+            {
+                fecha: "Nuestra Primera Cita", 
+                titulo: "Un día inolvidable", 
+                descripcion: "Cada momento a tu lado lo guardo en mi corazón para siempre.",
                 foto: "Cita_1.jpeg" 
             }
-            // Para agregar otro, quita las diagonales de abajo y pon tu información:
-            // ,{
-            //     fecha: "20 de Junio de 2026",
-            //     titulo: "Nuestra primera cita oficial",
-            //     descripcion: "Fuimos a comer y no podía dejar de mirarte.",
-            //     foto: "cita1.jpg"
-            // }
         ];
 
-        // Función para renderizar los recuerdos en el HTML
+        // Función para renderizar los recuerdos en 3D
         function cargarRecuerdos() {
             const container = document.getElementById('timeline-container');
             let html = "";
@@ -271,11 +308,21 @@
                     : `<div class="polaroid-no-img">💖</div>`;
 
                 html += `
-                <div class="polaroid">
-                    <div class="polaroid-img-container">${imgHTML}</div>
-                    <div class="polaroid-date">${recuerdo.fecha}</div>
-                    <div class="polaroid-title">${recuerdo.titulo}</div>
-                    <div class="polaroid-desc">${recuerdo.descripcion}</div>
+                <div class="polaroid-container">
+                    <div class="polaroid-inner">
+                        <!-- Lado de la Foto -->
+                        <div class="polaroid-front">
+                            <div class="polaroid-img-container">${imgHTML}</div>
+                            <div class="polaroid-date">${recuerdo.fecha}</div>
+                            <div class="polaroid-hint">Tócame ✨</div>
+                        </div>
+                        <!-- Lado del Mensaje Oculto -->
+                        <div class="polaroid-back">
+                            <div class="polaroid-title">${recuerdo.titulo}</div>
+                            <div class="polaroid-desc">${recuerdo.descripcion}</div>
+                            <div class="polaroid-decor">♥</div>
+                        </div>
+                    </div>
                 </div>`;
             });
             container.innerHTML = html;
@@ -293,7 +340,6 @@
             setTimeout(() => {
                 document.getElementById('universe-section').style.display = 'none';
                 document.getElementById('diary-section').style.display = 'block';
-                // Restablecer scroll al inicio
                 document.getElementById('diary-section').scrollTop = 0;
                 setTimeout(() => { document.getElementById('diary-section').style.opacity = '1'; }, 50);
             }, 1000);
